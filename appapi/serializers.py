@@ -81,49 +81,6 @@ class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
         fields = '__all__'
-    #     extra_kwargs = {
-    #         "product": {"required": True},
-    #         "quantity": {"required": True, "min_value": 1},
-    #     }
-
-    # def get_price(self, obj):
-    #     return obj.price
-
-    # def to_representation(self, instance):
-    #     data = super().to_representation(instance)
-    #     data["user"] = {
-    #         "id": instance.user.id,
-    #         "username": instance.user.username,
-    #     }
-    #     data["product"] = (
-    #         {
-    #             "id": instance.product.id,
-    #             "name": instance.product.name,
-    #             "price": instance.product.price,
-    #             "images": list(map(lambda x: x.url, instance.product.images)),
-    #         }
-    #         if instance.product
-    #         else None
-    #     )
-
-    #     return data
-
-    # def create(self, validated_data):
-    #     product = validated_data.get("product")
-    #     product_exists_in_cart = Cart.objects.filter(
-    #         product__id=product.id
-    #     ).exists()
-
-    #     if product_exists_in_cart:
-    #         product = Cart.objects.filter(product__id=product.id).first()
-    #         product.quantity += 1
-    #         product.save()
-
-    #         return product
-
-    #     return super().create(validated_data)
-
-
 class HistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = History

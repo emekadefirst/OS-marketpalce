@@ -6,17 +6,18 @@ from django.contrib.auth.hashers import make_password
 from rest_framework.response import Response
 from django.http import JsonResponse
 from rest_framework import status
-from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
-from .models import Seller, Product, Category, SalesRecord
-from .serializers import UserSerializer, SellerSerializer, CategorySerializer, ProductSerializer
+from .models import Seller, Product, Category, SalesRecord, Cart
+from .serializers import UserSerializer, SellerSerializer, CategorySerializer, ProductSerializer, CartSerializer
 from django.contrib.auth.signals import user_logged_in
+from django.db.models import Q
 from django.dispatch import receiver
+from .serializers import OrderSerializer
+from .models import Order
 
-
+# Registration view
 @api_view(['POST'])
-@csrf_exempt
 def register(request):
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
@@ -29,8 +30,6 @@ def register(request):
     return Response(serializer.errors, status=status.HTTP_200_OK)
 
 # Login view
-
-
 @api_view(['POST'])
 def login_view(request):
     email = request.data.get('email')
@@ -48,8 +47,7 @@ def login_view(request):
     serializer = UserSerializer(user)
     return Response({'token': token.key, 'user': serializer.data})
 
-
-
+# Seller creation view
 @api_view(['GET', 'POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -60,10 +58,7 @@ def create_seller(request):
         return JsonResponse({"message": "Seller created successfully"}, status=201)
     return JsonResponse(serializer.errors, status=400)
 
-
 # Test token view
-
-
 @api_view(['GET'])
 @authentication_classes([SessionAuthentication, TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -71,13 +66,10 @@ def test_token(request):
     return Response("passed!")
 
 # List all products view
-
-
 @receiver(user_logged_in)
 def update_last_login_timestamp(sender, request, user, **kwargs):
     user.last_login_timestamp = user.last_login
     user.save()
-
 
 from rest_framework import permissions
 
@@ -86,20 +78,19 @@ class IsSellerPermission(permissions.BasePermission):
         # Check if the user is a seller.
         return request.user and request.user.is_authenticated and hasattr(request.user, 'seller')
 
-
+# List all products view
 @api_view(['GET'])
 def all_product(request):
     products = Product.objects.all()
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data)
 
+# Specific product view
 @api_view(['GET'])
 def specific_product(request, model_name, pk):
     return Response({"Success": "Access granted"}, status=200)
 
 # Add product view
-
-
 @api_view(['POST'])
 @authentication_classes([SessionAuthentication, TokenAuthentication])
 @permission_classes([IsAuthenticated, IsSellerPermission]) 
@@ -113,10 +104,7 @@ def addProduct(request):
 
     return Response("Method not allowed for GET request", status=405)
 
-
 # Product detail view (GET, PUT, DELETE)
-
-
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated, IsSellerPermission]) 
 def product_detail(request, model_name, pk):
@@ -141,8 +129,6 @@ def product_detail(request, model_name, pk):
         return Response({"message": "Product deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 # Create sales record view
-
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsSellerPermission]) 
 def create_sales_record(request):
@@ -173,8 +159,94 @@ def create_sales_record(request):
     return Response("Method not allowed for GET request", status=405)
 
 # Home view
-
-
 @api_view(['GET'])
 def home(request):
     return Response("ok")
+
+# Search view
+@api_view(['GET', 'POST'])
+def search(request):
+    query = request.GET.get('q')
+    results = Product.objects.filter(
+        Q(name__icontains=query) |
+        Q(ID__icontains=query) |
+        Q(product_description__icontains=query) |
+        Q(category__icontains=query)
+    )
+
+    if not results:
+        return Response({"Error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+    results_data = [{'name': item.name, 'product_description': item.product_description, 'category': item.category} for item in results]
+
+    return Response(results_data, status=status.HTTP_200_OK)
+
+# User profile view
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def user(request):
+    user = request.user  # Get the authenticated user
+
+    if user is not None:
+        user_data = {
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            # Add more user-related fields as needed
+
+            # Additional fields from the Buyer model
+            'phone_number': user.buyer_set.first().phone_number,
+            'profile_image': user.buyer_set.first().profile_image.url if user.buyer_set.first().profile_image else None,
+            'wallet_balance': user.buyer_set.first().wallet.balance,
+            'street_address': user.buyer_set.first().street_address,
+            'land_mark': user.buyer_set.first().land_mark,
+            'date_created': user.buyer_set.first().date_created,
+            'LGA': user.buyer_set.first().LGA,
+            'state': user.buyer_set.first().state,
+            # Add more Buyer model fields as needed
+
+            # Include Wallet data
+            'wallet_transactions': [
+                {
+                    'amount': transaction.amount,
+                    'status': transaction.status,
+                    'type': transaction.type,
+                    # Add more Wallet transaction fields as needed
+                }
+                for transaction in user.buyer_set.first().wallet.transaction_set.all()
+            ],
+
+            # Include History data
+            'purchase_history': [
+                {
+                    'total_purchase': history.total_purchase,
+                    'time_purchased': history.time_purchased,
+                    # Add more History fields as needed
+                }
+                for history in user.buyer_set.first().history_set.all()
+            ],
+        }
+
+        return Response(user_data, status=status.HTTP_200_OK)
+    else:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+# View for handling the user's shopping cart
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])  # Use IsAuthenticated to ensure the user is logged in
+def cart_view(request):
+    if request.method == 'GET':
+        # Retrieve all items in the user's cart
+        cart_items = Cart.objects.filter(user=request.user)
+        serializer = CartSerializer(cart_items, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        # Create a new item in the user's cart
+        serializer = CartSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.validated_data['user'] = request.user  # Associate the item with the logged-in user
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

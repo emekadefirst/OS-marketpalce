@@ -21,6 +21,6 @@ from django.contrib import admin
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('admin-page', include('admin_material.urls')),
-    path('seller/', include('appapi.urls')),
+    path('appapi/', include('appapi.urls')),
 ]
 
