@@ -32,7 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'admin_material.apps.AdminMaterialDashboardConfig',
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -81,8 +81,12 @@ WSGI_APPLICATION = 'server.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'uxcdatabase',  # Database name
+        'USER': 'uxcdatabase_user',  # Database user
+        'PASSWORD': 'pFU4LuZQtWGuA037U5Y1PUJKMWx6Dlga',  # Database password
+        'HOST': 'dpg-cktask0168ec73c85q5g-a.oregon-postgres.render.com',  # Database host
+        'PORT': '5432',  # Default PostgreSQL port (leave empty for default)
     }
 }
 
@@ -133,6 +137,14 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-LOGIN_REDIRECT_URL = '/'
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+JAZZMIN_SETTINGS = {
+    "site_title": "unixchange Admin",
+    "site_header": "unixchange",
+    "site_brand": "unixchange",
+    "site_logo": "unixchange-white.png",
+    "site_copyright": "unixchange",
+     "login_logo": "unixchange-white.png"
+}
