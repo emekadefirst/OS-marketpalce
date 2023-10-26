@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-y%dx_!8lj0rh-g_vhb4j#5xiv^_27)k50rd(dlx=v%iei!%^ju'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
@@ -82,11 +82,11 @@ WSGI_APPLICATION = 'server.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'uxcdatabase',  # Database name
-        'USER': 'uxcdatabase_user',  # Database user
-        'PASSWORD': 'pFU4LuZQtWGuA037U5Y1PUJKMWx6Dlga',  # Database password
-        'HOST': 'dpg-cktask0168ec73c85q5g-a.oregon-postgres.render.com',  # Database host
-        'PORT': '5432',  # Default PostgreSQL port (leave empty for default)
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
     }
 }
 
