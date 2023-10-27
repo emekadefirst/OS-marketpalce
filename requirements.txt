@@ -17,4 +17,4 @@ uritemplate
 urllib3
 whitenoise
 gunicorn
-jazzmin==2.6.0
+
