@@ -146,5 +146,8 @@ JAZZMIN_SETTINGS = {
     "site_brand": "unixchange",
     "site_logo": "unixchange-white.png",
     "site_copyright": "unixchange",
-     "login_logo": "unixchange-white.png"
+    "login_logo": "unixchange-black.png",
+    "copyright": "unixchange",
+    "theme": "flatly",
+    "dark_mode_theme": "darkly",
 }
