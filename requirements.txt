@@ -16,3 +16,4 @@ tzdata
 uritemplate
 urllib3
 whitenoise
+gunicorn
