@@ -9,25 +9,47 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from .models import Seller, Product, Category, SalesRecord, Cart
-from .serializers import UserSerializer, SellerSerializer, CategorySerializer, ProductSerializer, CartSerializer
+from .serializers import BuyerSerializer, SellerSerializer, CategorySerializer, ProductSerializer, CartSerializer
 from django.contrib.auth.signals import user_logged_in
 from django.db.models import Q
 from django.dispatch import receiver
 from .serializers import OrderSerializer
-from .models import Order
+from .models import Order, Buyer
+from rest_framework.permissions import AllowAny
 
-# Registration view
 @api_view(['POST'])
-def register(request):
-    serializer = UserSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        user = User.objects.get(username=request.data['username'])
-        user.set_password(request.data['password'])
-        user.save()
-        token = Token.objects.create(user=user)
-        return Response({'token': token.key, 'user': serializer.data})
-    return Response(serializer.errors, status=status.HTTP_200_OK)
+@permission_classes([AllowAny])  # Allow registration for unauthenticated users
+def register_user(request):
+    if request.method == 'POST':
+        data = request.data  # Assuming you send a JSON request with the provided data
+
+        # Use the BuyerSerializer for registration
+        serializer = BuyerSerializer(data=data)
+
+        if serializer.is_valid():
+            # Extract user-related data from the request
+            user_data = {
+                'username': data['username'],
+                'password': data['password'],
+                'email': data['email'],
+                'first_name': data['first_name'],
+                'last_name': data['last_name'],
+                'phone_number': data['phone_number'],
+            }
+
+            # Create the user
+            user = User.objects.create_user(**user_data)
+
+            # Create the Buyer instance associated with the user
+            buyer = Buyer(user=user, phone_number=data['phone_number'])
+            buyer.save()
+
+            # Create a token for the user
+            token, _ = Token.objects.get_or_create(user=user)
+
+            return Response({'token': token.key, 'user': BuyerSerializer(buyer).data}, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Login view
 @api_view(['POST'])
@@ -44,7 +66,7 @@ def login_view(request):
         return Response({'error': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
 
     token, created = Token.objects.get_or_create(user=user)
-    serializer = UserSerializer(user)
+    serializer = BuyerSerializer(user)
     return Response({'token': token.key, 'user': serializer.data})
 
 # Seller creation view
@@ -250,3 +272,33 @@ def cart_view(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+from django.contrib.auth import login
+from allauth.account.models import EmailAddress
+from allauth.account.views import SignupView
+from django.views.decorators.http import require_POST
+from django.http import HttpResponseRedirect
+
+@require_POST
+def custom_signup_view(request):
+    # Instantiate the SignupView and process the form data
+    signup_view = SignupView()
+    signup_view.request = request
+    form = signup_view.get_form(signup_view.form_class)
+
+    if form.is_valid():
+        response = signup_view.form_valid(form)
+
+        # Log the user in immediately after registration
+        login(request, signup_view.user)
+
+        # Send an email verification link to the user
+        email_address = EmailAddress.objects.get(user=signup_view.user)
+        email_address.send_confirmation(request)
+
+        return response
+
+    # If the form is not valid, return an error response or redirect as needed
+    # Example: return render(request, 'registration/signup.html', {'form': form})
+    return HttpResponseRedirect('/registration/error/')  # Redirect to an error page if the form is not valid
+

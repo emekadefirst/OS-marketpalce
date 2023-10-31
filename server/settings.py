@@ -41,6 +41,11 @@ INSTALLED_APPS = [
     'appapi',
     'rest_framework',
     'rest_framework.authtoken',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -52,7 +57,23 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:5500"
+    # Add other origins as needed
+]
+
+# Allow credentials (cookies, authorization headers, etc.) to be sent cross-origin
+CORS_ALLOW_CREDENTIALS = True
+
+# You can configure other CORS options as needed, such as methods, headers, and more.
+# For example:
+# CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE"]
+# CORS_ALLOW_HEADERS = ["Content-Type", "Authorization"]
+
 
 ROOT_URLCONF = 'server.urls'
 
@@ -67,6 +88,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request',
             ],
         },
     },
@@ -146,3 +168,18 @@ JAZZMIN_SETTINGS = {
     "theme": "flatly",
     "dark_mode_theme": "darkly",
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'unixchange17@gmail.com'
+EMAIL_HOST_PASSWORD = 'Ux2021$.'
+
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/accounts/login/'
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = None
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
+ACCOUNT_EMAIL_CONFIRMATION_HMAC = True
+ACCOUNT_EMAIL_CONFIRMATION_SIGNUP = True
+
+# AUTH_USER_MODEL = 'yourapp.CustomUser'

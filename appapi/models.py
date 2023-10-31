@@ -8,9 +8,24 @@ from django.dispatch import receiver
 def generate_reference():
     return secrets.token_hex(8).upper()
 
+class Buyer(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, default=None)
+    phone_number = models.CharField(max_length=15)
+    profile_image = models.FileField(upload_to="buyer-img-store")
+    wallet_balance = models.FloatField(max_length=8, default=0.00)
+    street_address = models.TextField(default=None)
+    land_mark = models.TextField(default=None)
+    date_created = models.DateTimeField(auto_now_add=True)
+    token = models.CharField(max_length=100, null=True, blank=True)
+    LGA = models.CharField(max_length=50)
+    state = models.CharField(max_length=15)
+    username = models.CharField(max_length=150)  # Add this field
+
+    def __str__(self):
+        return self.username
+
 class Seller(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, default=None)
-    profile_image = models.FileField(upload_to="seller-img-store")
+    user = models.OneToOneField(Buyer, on_delete=models.CASCADE, null=True, default=None)
     Identity_Type = (
         ('School', 'SCHOOL-ID-CARD'),
         ('Faculty', 'FACULTY-ID-CARD'),
@@ -20,14 +35,13 @@ class Seller(models.Model):
         choices=Identity_Type,
         default='SCHOOL-ID-CARD',
     )
+    National_ID_Number = models.IntegerField(default='')
     id_image = models.FileField(upload_to="ID-img-store")
-    phone_number = models.CharField(max_length=15)
     matric_number = models.CharField(max_length=50, unique=True, default='')
     university_name = models.CharField(max_length=300)
     faculty = models.CharField(max_length=300)
     department = models.CharField(max_length=300)
     date_created = models.DateTimeField(auto_now_add=True)
-    token = models.CharField(max_length=100, null=True, blank=True)
     last_login_timestamp = models.DateTimeField(null=True, blank=True)  # Added field
 
     def __str__(self):
@@ -54,6 +68,7 @@ class Seller(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=250)
+    product_count = models.PositiveIntegerField(default=0)  # Add this field
 
     class Meta:
         permissions = [
@@ -62,6 +77,7 @@ class Category(models.Model):
             ("change_category_custom", "Can change categories"),
             ("delete_category_custom", "Can delete categories"),
         ]
+
         
 class Product(models.Model):
     id = models.AutoField(primary_key=True)
@@ -99,21 +115,7 @@ class SalesRecord(models.Model):
     def __str__(self):
         return f"SalesRecord for {self.seller} - {self.product} at {self.time_sold}"
 
-class Buyer(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, default=None)
-    
-    phone_number = models.CharField(max_length=15)
-    profile_image = models.FileField(upload_to="buyer-img-store")
-    wallet_balance = models.FloatField(max_length=8, default=0.00)
-    street_address = models.TextField(default=None)
-    land_mark = models.TextField(default=None)
-    date_created = models.DateTimeField(auto_now_add=True)
-    token = models.CharField(max_length=100, null=True, blank=True)
-    LGA = models.CharField(max_length=50)
-    state = models.CharField(max_length=15)
-    
-    def __str__(self):
-        return self.username
+
     
 class Transaction(models.Model):
     class TRANSACTION_STATUS(models.TextChoices):
